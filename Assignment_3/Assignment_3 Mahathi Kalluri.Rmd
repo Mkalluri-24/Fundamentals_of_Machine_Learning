@@ -1,0 +1,167 @@
+---
+title: "Assignment 3 - Naive Bayes"
+author: "Mahathi Kalluri"
+date: "2026-10-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Assignment 3: Naive Bayes Classification
+
+## Objective
+
+In this assignment, I am using the UniversalBank.csv dataset to see how credit card usage and online banking behaviour influence whether a customer accepts a personal loan or not. I'll be using pivot tables and Naive Bayes modeling to find the probability of a loan acceptance.
+
+
+## Data Preparation
+
+Out of the 5,000 customer records in the UniversalBank dataset, I used 60% (3,000 records) as the training set and kept the remaining 40% (2,000 records) for validation.
+
+```{r data-preparation}
+bank <- read.csv("C:/Users/Mahathi Kalluri/Downloads/UniversalBank.csv")
+
+set.seed(123)
+train_rows <- sample(1:nrow(bank), 3000)
+train <- bank[train_rows, ]
+validation <- bank[-train_rows, ]
+
+dim(train)
+dim(validation)
+```
+
+## Part A: Pivot Table
+
+In this part, I used the training data to create a pivot table for CreditCard, Personal Loan and Online. This table helped me see how many customers accepted or did not accept the personal loan based on whether they have a credit card and use online banking.
+
+
+```{r part-a}
+table(train$CreditCard, train$Personal.Loan, train$Online)
+```
+
+
+From the table, I can see that 57 customers who have a credit card and use online banking accepted the personal loan, while 475 customers from the same group did not accept it.
+
+
+## Part B: Probability Calculation
+
+I calculated how likely a customer is to take a personal loan given that they use online banking and own a credit card. From my results in Part A, 57 customers accepted the loan and 475 rejected it within this group.
+
+
+```{r part-b}
+57 / (475 + 57)
+```
+
+The probability I got is 0.1071, which is around 10.71%. This means that out of 100 customers who have a credit card and use online banking, around 11 customers accepted the personal loan in the training data.
+
+
+## Part C: Pivot Tables
+
+For this part, I used the training data to make two pivot tables. The first table compares loan acceptance with online banking usage, and the second one checks loan acceptance against credit card ownership.
+
+
+```{r part-c-online}
+table(train$Personal.Loan, train$Online)
+```
+
+```{r part-c-creditcard}
+table(train$Personal.Loan, train$CreditCard)
+```
+
+From the first table, I can see that 179 customers who use online banking accepted the personal loan. In the second table, 91 customers who have a credit card accepted the loan. These numbers will help me calculate the probabilities in the next part.
+
+
+## Part D: Probability Calculations
+
+```{r part-d}
+# i. Credit card given loan accepted
+91 / 278
+
+# ii. Online banking given loan accepted
+179 / 278
+
+# iii. Loan accepted
+278 / 3000
+
+# iv. Credit card given loan not accepted
+792 / 2722
+
+# v. Online banking given loan not accepted
+1620 / 2722
+
+# vi. Loan not accepted
+2722 / 3000
+```
+
+From these calculations, I found that 278 out of 3,000 customers accepted the personal loan, while 2,722 did not. I also calculated the probabilities for credit card ownership and online banking separately for both groups.
+
+
+
+## Part E: Naive Bayes Probability
+
+```{r part-e}
+loan_yes <- (91 / 278) * (179 / 278) * (278 / 3000)
+loan_no <- (792 / 2722) * (1620 / 2722) * (2722 / 3000)
+
+loan_yes / (loan_yes + loan_no)
+```
+
+
+Using the Naive Bayes calculation, I got a probability of 0.1106, which is around 11.06%. This is the estimated chance of accepting a personal loan for a customer who owns a credit card and uses online banking.
+
+
+## Part F: Comparison of Probabilities
+
+The result from Part B was 10.71% since it directly calculated the exact ratio using the actual data, while Part E used the Naive Bayes formula to produce 11.06%. While Part B is entirely accurate for this training sample, it remains essential to analyze the validation data to determine which approach yields better predictions for new customers.
+
+
+## Part G: Naive Bayes Model
+
+```{r part-g-old}
+library(e1071)
+
+model <- naiveBayes(
+  as.factor(Personal.Loan) ~
+    as.factor(CreditCard) + as.factor(Online),
+  data = train
+)
+
+model
+```
+
+
+```{r part-g-prediction}
+new_customer <- data.frame(
+  CreditCard = factor(1, levels = c(0, 1)),
+  Online = factor(1, levels = c(0, 1))
+)
+
+predict(model, newdata = new_customer, type = "raw")
+```
+
+```{r part-g-model}
+library(e1071)
+
+train$CreditCard <- as.factor(train$CreditCard)
+train$Online <- as.factor(train$Online)
+train$Personal.Loan <- as.factor(train$Personal.Loan)
+
+model <- naiveBayes(
+  Personal.Loan ~ CreditCard + Online,
+  data = train
+)
+
+model
+```
+
+
+### Part G: Conclusion
+
+The probability of accepting a personal loan for a person with a credit card and online banking is 11.06% according to the Naive Bayes model. I also got the same result when I calculated it using the formula in Part E. The probabilities shown in the model matched the values I calculated in Part D.
+
+
+## Final Conclusion
+
+In this assignment, I worked with the UniversalBank dataset to see how having a credit card and using online banking are related to taking a personal loan. From the pivot table, I got 10.71%, and when I used Naive Bayes, I got 11.06%. The results were almost the same. By doing this assignment, I got a better idea of how to find probabilities from tables and how Naive Bayes works with the same data.
