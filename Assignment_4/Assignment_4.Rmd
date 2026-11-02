@@ -1,0 +1,98 @@
+---
+title: "Assignment 4 - K Means Clustering"
+author: "Mahathi Kalluri"
+date: "2026-11-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+pharma <- read.csv("Pharmaceuticals.csv")
+head(pharma)
+str(pharma)
+```
+```{r}
+# Select the 9 numerical variables
+pharma_numeric <- pharma[, 3:11]
+
+# Normalize the data
+pharma_scaled <- scale(pharma_numeric)
+
+# View normalized data
+head(pharma_scaled)
+```
+```{r}
+set.seed(123)
+
+wss <- numeric(10)
+
+for (k in 1:10) {
+  wss[k] <- kmeans(pharma_scaled, centers = k, nstart = 25)$tot.withinss
+}
+
+plot(1:10, wss, type = "b",
+     xlab = "Number of Clusters (k)",
+     ylab = "Within-Cluster Sum of Squares",
+     main = "Elbow Method")
+```
+```{r}
+set.seed(123)
+
+pharma_kmeans <- kmeans(pharma_scaled, centers = 2, nstart = 25)
+
+# Cluster sizes
+pharma_kmeans$size
+
+# Cluster centers
+pharma_kmeans$centers
+
+# Assign clusters to companies
+pharma$Cluster <- pharma_kmeans$cluster
+
+# View results
+pharma[, c("Name", "Cluster")]
+```
+```{r}
+# Cluster sizes
+pharma_kmeans$size
+
+# Average values for each cluster
+aggregate(pharma_numeric,
+          by = list(Cluster = pharma$Cluster),
+          FUN = mean)
+
+# Patterns in recommendation, location and exchange
+table(pharma$Cluster, pharma$Median_Recommendation)
+table(pharma$Cluster, pharma$Location)
+table(pharma$Cluster, pharma$Exchange)
+```
+## (a) Clustering Method
+
+I used K-Means clustering to group the 21 pharmaceutical companies. I selected the nine numerical financial variables and normalized them using the `scale()` function because the variables have different measurement scales. I gave equal weight to all nine variables.
+
+I used the elbow method to compare different values of k. Based on the graph, I selected 2 clusters. I used Euclidean distance, which is the default distance measure in K-Means, and 25 random starts to improve the clustering result.
+
+## (b) Interpretation of Clusters
+
+**Cluster 1:** This cluster has 11 companies. They have higher average market capitalization (97.11), ROE (35.7), ROA (14.95), asset turnover (0.80), and net profit margin (20.17). This shows that these companies are generally larger and more profitable.
+
+**Cluster 2:** This cluster has 10 companies. They have lower average market capitalization (14.24), ROE (14.9), ROA (5.63), and net profit margin (10.77). However, they have higher beta (0.63), P/E ratio (30.42), leverage (0.87), and revenue growth (16.90). This shows that these companies are smaller, have lower profitability, but higher average revenue growth.
+
+## (c) Patterns in Other Variables
+
+I compared the clusters using median recommendation, location, and stock exchange. These variables were not used to create the clusters.
+
+All 11 companies in Cluster 1 are listed on NYSE, and 8 are located in the US. Cluster 2 contains companies from more countries, with 8 listed on NYSE, 1 on NASDAQ, and 1 on AMEX.
+
+Both clusters contain different analyst recommendations. Cluster 1 has more Hold recommendations, while Cluster 2 has more Moderate Buy recommendations. This shows some differences between the clusters, but the recommendations are not completely separated.
+
+## (d) Cluster Names
+
+**Cluster 1: Large and Profitable Pharmaceutical Companies**
+
+**Cluster 2: Smaller and Lower-Profit Pharmaceutical Companies**
+
+I selected these names based on the differences in average market capitalization and profitability.
